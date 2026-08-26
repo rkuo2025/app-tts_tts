@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>練習華語 — 雙人語音合成</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      color: #1f2937;
+      background: #f9fafb;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.4rem; }
+    .sub { color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem; }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    label { display: block; font-weight: 600; margin: 1rem 0 0.4rem; font-size: 0.9rem; }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    select, input[type="range"] {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .voice-display {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .val { font-variant-numeric: tabular-nums; font-weight: 400; }
+    .controls { display: flex; gap: 0.6rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    button {
+      padding: 0.6rem 1.1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+      transition: background 0.15s;
+    }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #e5e7eb; color: #1f2937; }
+    button.secondary:hover { background: #d1d5db; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { margin-top: 1rem; font-size: 0.9rem; color: #6b7280; min-height: 1.2em; }
+    .translated {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: #374151;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      min-height: 0;
+    }
+    .translated:empty { display: none; }
+    .translated .tag { font-weight: 600; margin-right: 0.4rem; }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) {
+      .panels { grid-template-columns: 1fr; }
+    }
+    .panel-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .panel-a { border-top: 3px solid #2563eb; }
+    .panel-b { border-top: 3px solid #059669; }
+  </style>
+</head>
+<body>
+
+  <h1 style="text-align: center;">Practicing Mandarin (雙人練習華語)</h1>
+
+  <div class="panels">
+
+    <!-- Left: TTS Panel A -->
+    <div class="card panel-a">
+      <div class="panel-title" style="color:#2563eb;">Role-A</div>
+
+      <label for="langA">Language</label>
+      <select id="langA">
+        <option value="zh-TW">中文（zh-TW）</option>
+        <option value="en">英文（English）</option>
+        <option value="id">印尼文（Bahasa Indonesia）</option>
+        <option value="vi">越南文（Tiếng Việt）</option>
+      </select>
+
+      <label for="textA">Dialog-1</label>
+      <textarea id="textA">我要買一杯波霸奶茶。</textarea>
+      <label for="textA2">Dialog-3</label>
+      <textarea id="textA2">我要中杯，半糖，少冰。</textarea>
+      <label for="textA3">Dialog-5</label>
+      <textarea id="textA3">不用了，謝謝。</textarea>
+
+      <label for="rateA">Speed（速度）：<span class="val" id="rateValA">0.8</span></label>
+      <input type="range" id="rateA" min="0.5" max="2" step="0.1" value="0.8" />
+
+      <label for="pitchA">Pitch（音高）：<span class="val" id="pitchValA">0.4</span></label>
+      <input type="range" id="pitchA" min="0" max="2" step="0.1" value="0.4" />
+
+      <div id="translatedA" class="translated"></div>
+      <div class="status" id="statusA"></div>
+    </div>
+
+    <!-- Right: TTS Panel B -->
+    <div class="card panel-b">
+      <div class="panel-title" style="color:#059669;">Role-B</div>
+
+      <label for="langB">Language</label>
+      <select id="langB">
+        <option value="zh-TW" selected>中文（zh-TW）</option>
+        <option value="en">英文（English）</option>
+        <option value="id">印尼文（Bahasa Indonesia）</option>
+        <option value="vi">越南文（Tiếng Việt）</option>
+      </select>
+
+      <label for="textB">Dialog-2</label>
+      <textarea id="textB">請問要什麼大小、甜度和冰塊呢？</textarea>
+      <label for="textB2">Dialog-4</label>
+      <textarea id="textB2">好的，一共六十元。請問還需要其他的嗎？</textarea>
+      <label for="textB3">Dialog-6</label>
+      <textarea id="textB3">不客氣，請稍等一下。</textarea>
+
+      <label for="rateB">Speed（速度）：<span class="val" id="rateValB">1.0</span></label>
+      <input type="range" id="rateB" min="0.5" max="2" step="0.1" value="0.8" />
+
+      <label for="pitchB">Pitch（音高）：<span class="val" id="pitchValB">1.0</span></label>
+      <input type="range" id="pitchB" min="0" max="2" step="0.1" value="1" />
+
+      <div id="translatedB" class="translated"></div>
+      <div class="status" id="statusB"></div>
+    </div>
+
+  </div>
+
+  <div style="text-align: center; margin-top: 1rem;">
+    <button id="speakAll" style="margin-right: 1rem;">▶ Speak</button>
+    <button id="stopAll" class="secondary">⏹ Stop</button>
+  </div>
+
+  <script>
+    // === Shared Utility ===
+    async function translateToZhTW(text, sourceLang) {
+      const url =
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
+        encodeURIComponent(sourceLang) +
+        "&tl=zh-TW&dt=t&q=" +
+        encodeURIComponent(text);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Translation Abnormal (" + res.status + ")");
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        return data[0].map(seg => (seg && seg[0]) || "").join("");
+      }
+      return "";
+    }
+
+    // === Dialogues from bubble_tea.html ===
+    const dialogues = [
+      { id: 1, zh: "我要買一杯波霸奶茶。", panel: "A" },
+      { id: 2, zh: "好的，請問要什麼大小、甜度和冰塊呢？", panel: "B" },
+      { id: 3, zh: "我要中杯，半糖，少冰。", panel: "A" },
+      { id: 4, zh: "好的，一共六十元。請問還需要其他的嗎？", panel: "B" },
+      { id: 5, zh: "不用了，謝謝。", panel: "A" },
+      { id: 6, zh: "不客氣，請稍等一下。", panel: "B" }
+    ];
+
+    // === Voice mapping: 1,3,5 -> voiceA, 2,4,6 -> voiceB ===
+    let voicesA = [];
+    let voicesB = [];
+
+    function loadAllVoices() {
+      const all = window.speechSynthesis.getVoices();
+      voicesA = all
+        .filter(v => v.lang.replace("_", "-").toLowerCase() === "zh-tw" && !v.localService)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      if (voicesA.length === 0) {
+        voicesA = all.filter(v => v.lang.toLowerCase().includes("zh"));
+      }
+      voicesB = [...voicesA]; // same pool, will select first each time
+    }
+
+    function getVoiceA() {
+      return voicesA[0];
+    }
+    function getVoiceB() {
+      return voicesB[0];
+    }
+
+    // === Speak all 6 dialogues sequentially ===
+    function speakAllDialogues() {
+      window.speechSynthesis.cancel();
+
+      let index = 0;
+
+      function next() {
+        if (index >= dialogues.length) return;
+        const dialog = dialogues[index];
+        let text;
+
+        if (dialog.id === 1) {
+          text = document.getElementById("textA").value;
+        } else if (dialog.id === 2) {
+          text = document.getElementById("textB").value;
+        } else if (dialog.id === 3) {
+          text = document.getElementById("textA2").value;
+        } else if (dialog.id === 4) {
+          text = document.getElementById("textB2").value;
+        } else if (dialog.id === 5) {
+          text = document.getElementById("textA3").value;
+        } else if (dialog.id === 6) {
+          text = document.getElementById("textB3").value;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "zh-TW";
+
+        if (dialog.id % 2 === 1) { // 1,3,5
+          utterance.voice = getVoiceA();
+          utterance.rate  = Number(document.getElementById("rateA").value);
+          utterance.pitch = Number(document.getElementById("pitchA").value);
+        } else { // 2,4,6
+          utterance.voice = getVoiceB();
+          utterance.rate  = Number(document.getElementById("rateB").value);
+          utterance.pitch = Number(document.getElementById("pitchB").value);
+        }
+
+        utterance.onstart = () => {
+          document.getElementById("statusA").textContent = `Playing(播放中)… Dialog ${dialog.id}`;
+          document.getElementById("statusB").textContent = `Playing(播放中)… Dialog ${dialog.id}`;
+        };
+        utterance.onend = () => {
+          index++;
+          if (index < dialogues.length) {
+            next();
+          } else {
+            document.getElementById("statusA").textContent = "Done(完成).";
+            document.getElementById("statusB").textContent = "Done(完成).";
+          }
+        };
+        utterance.onerror = (e) => {
+          document.getElementById("statusA").textContent = `Error(錯誤)：${e.error}`;
+          document.getElementById("statusB").textContent = `Error(錯誤)：${e.error}`;
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+
+      next();
+    }
+
+    // === Stop button ===
+    function stopAll() {
+      window.speechSynthesis.cancel();
+      document.getElementById("statusA").textContent = "已停止。";
+      document.getElementById("statusB").textContent = "已停止。";
+    }
+
+    document.getElementById("speakAll").addEventListener("click", speakAllDialogues);
+    document.getElementById("stopAll").addEventListener("click", stopAll);
+
+    document.getElementById("rateA").addEventListener("input", () => {
+      document.getElementById("rateValA").textContent = document.getElementById("rateA").value;
+    });
+    document.getElementById("pitchA").addEventListener("input", () => {
+      document.getElementById("pitchValA").textContent = document.getElementById("pitchA").value;
+    });
+    document.getElementById("rateB").addEventListener("input", () => {
+      document.getElementById("rateValB").textContent = document.getElementById("rateB").value;
+    });
+    document.getElementById("pitchB").addEventListener("input", () => {
+      document.getElementById("pitchValB").textContent = document.getElementById("pitchB").value;
+    });
+
+    loadAllVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadAllVoices;
+    }
+  </script>
+
+</body>
+</html>
